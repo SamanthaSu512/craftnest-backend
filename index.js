@@ -18,13 +18,11 @@ app.use(express.urlencoded({ extended: true }));
 // Resolve __dirname in ES module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, "public");
-const listingsFilePath = path.join(publicDir, "listings.json");
+const listingsFilePath = path.join(__dirname, "listings.json");
 
-// Ensure public directory and listings file exist
+// Ensure listings file exists
 async function ensureListingsFileExists() {
   try {
-    await fs.mkdir(publicDir, { recursive: true });
     try {
       await fs.access(listingsFilePath);
     } catch {
@@ -38,16 +36,23 @@ ensureListingsFileExists();
 
 // Helpers to read/write listings
 async function readListings() {
-  const data = await fs.readFile(listingsFilePath, "utf-8");
-  return JSON.parse(data);
+  try {
+    const data = await fs.readFile(listingsFilePath, "utf-8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error reading listings:", error);
+    return [];
+  }
 }
 
 async function writeListings(listings) {
-  await fs.writeFile(listingsFilePath, JSON.stringify(listings, null, 2), "utf-8");
+  try {
+    await fs.writeFile(listingsFilePath, JSON.stringify(listings, null, 2), "utf-8");
+  } catch (error) {
+    console.error("Error writing listings:", error);
+    throw error;
+  }
 }
-
-// Serve static files from public (optional)
-app.use(express.static(publicDir));
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -133,6 +138,20 @@ app.post("/listings/:id/buy", async (req, res) => {
   } catch (error) {
     console.error("Buy listing error:", error);
     res.status(500).json({ success: false, message: "Failed to mark as sold" });
+  }
+});
+
+app.delete("/listings/:id", async (req, res) => {
+  try {
+    const listings = await readListings();
+    const index = listings.findIndex(l => l.id === req.params.id);
+    if (index === -1) return res.status(404).json({ success: false, message: "Not found" });
+    const [removed] = listings.splice(index, 1);
+    await writeListings(listings);
+    res.json({ success: true, removedId: removed.id });
+  } catch (error) {
+    console.error("Delete listing error:", error);
+    res.status(500).json({ success: false, message: "Failed to delete listing" });
   }
 });
 
