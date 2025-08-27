@@ -6,7 +6,7 @@ import { Resend } from "resend";
 dotenv.config();
 
 const app = express();
-const port = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -18,8 +18,8 @@ app.post("/contact", async (req, res) => {
 
   try {
     await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: 'samanthasu2028@u.northwestern.edu',
+      from: "onboarding@resend.dev",
+      to: "samanthasu2028@u.northwestern.edu",
       subject: `New message from ${name}`,
       html: `<p><strong>Email:</strong> ${email}</p><p>${message}</p>`,
     });
@@ -31,6 +31,6 @@ app.post("/contact", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
