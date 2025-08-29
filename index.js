@@ -23,13 +23,9 @@ const listingsFilePath = path.join(__dirname, "listings.json");
 // Ensure listings file exists
 async function ensureListingsFileExists() {
   try {
-    try {
-      await fs.access(listingsFilePath);
-    } catch {
-      await fs.writeFile(listingsFilePath, JSON.stringify([], null, 2), "utf-8");
-    }
-  } catch (err) {
-    console.error("Failed to initialize listings file:", err);
+    await fs.access(listingsFilePath);
+  } catch {
+    await fs.writeFile(listingsFilePath, JSON.stringify([], null, 2), "utf-8");
   }
 }
 ensureListingsFileExists();
@@ -86,8 +82,8 @@ app.get("/listings", async (req, res) => {
 });
 
 app.post("/listings", async (req, res) => {
-  const { title, price, description, contact, imageUrl } = req.body;
-  if (!title || !price || !description || !contact) {
+  const { title, price, description, contact, imageUrl, imageAlt } = req.body;
+  if (!title || !price || !description || !contact || !imageUrl) {
     return res.status(400).json({ success: false, message: "Missing required fields" });
   }
   try {
@@ -99,6 +95,7 @@ app.post("/listings", async (req, res) => {
       description,
       contact,
       imageUrl: imageUrl || "",
+      imageAlt: imageAlt || "",
       likes: 0,
       sold: false,
       createdAt: new Date().toISOString(),
